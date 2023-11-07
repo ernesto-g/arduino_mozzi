@@ -4,6 +4,7 @@
 #include <ADSR.h>
 #include <StateVariable.h>
 #include <IntMap.h>
+#include <AudioOutput.h>
 
 Oscil <SAW2048_NUM_CELLS, AUDIO_RATE> oscSaw(SAW2048_DATA);
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope;
@@ -62,11 +63,12 @@ int updateAudio(){
   int out =  (int) (envelope.next() * oscSaw.next())>>8;  
   out = svf.next(out);
   //clip
-  if(out>243)
+  /* if(out>243)
     out = 243;
   else if(out<-244)
-    out = -244;
+    out = -244; */
   //____  
+  out = CLIP_AUDIO(out);
   return out; // must be in the range -244 to 243 in Mozzi’s default STANDARD audio mode.
 }
 

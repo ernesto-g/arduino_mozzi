@@ -2,10 +2,13 @@
 #include <Oscil.h> 
 #include <tables/triangle2048_int8.h>
 #include <ADSR.h>
+#include <AudioOutput.h>
+#include <WaveFolder.h>
 #include <ReverbTank.h>
 
 Oscil <TRIANGLE2048_NUM_CELLS, AUDIO_RATE> oscTri(TRIANGLE2048_DATA);
 ADSR <CONTROL_RATE, AUDIO_RATE> envelope;
+WaveFolder<> wf;
 ReverbTank reverb;
 
 float ARP[4]={261.6256,329.6276,391.9954,329.6276}; // C4 E4 G4 E4 
@@ -54,21 +57,20 @@ void updateControl(){
   envelope.update();
   
   dryWet = mozziAnalogRead(A0)/4; // 0 a 255
+
+  int lim = mozziAnalogRead(A1)/4 + 2;
+  wf.setLimits(-1*lim, lim);  
   
 }
 
 int updateAudio(){        
   int out =  (int) (envelope.next() * oscTri.next())>>8;  
+  out = wf.next(out);
   int rev = reverb.next(out);
 
   out = ( (out*dryWet) + (rev*(255-dryWet)))>>8; // MIX dry Wet
   
-  //clip // must be in the range -244 to 243 in Mozzi’s default STANDARD audio mode.
-  if(out>243)
-    out = 243;
-  else if(out<-244)
-    out = -244;
-  //____ 
+  out = CLIP_AUDIO(out);
   
   return  out;
 }
